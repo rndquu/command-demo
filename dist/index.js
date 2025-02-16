@@ -31408,13 +31408,6 @@ async function isUserAdmin({ payload: e, octokit: t, logger: r }) {
     return false;
   }
 }
-async function setLabels({ payload: e, octokit: t }) {
-  const r = e.repository.name;
-  const s = e.issue.number;
-  const o = e.repository.owner.login;
-  await t.rest.issues.removeAllLabels({ owner: o, repo: r, issue_number: s });
-  await t.rest.issues.addLabels({ owner: o, repo: r, issue_number: s, labels: ["Priority: 1 (Normal)", "Time: <1 Hour"] });
-}
 async function openIssue({ octokit: e, payload: t }) {
   const r = t.repository.name;
   const s = t.issue.number;
@@ -31447,11 +31440,10 @@ async function handleComment(e) {
   const i = t.repository.owner.login;
   if (A.trim().startsWith("/demo")) {
     if (!(await isUserAdmin(e))) {
-      throw r.error("You are not an organization member thus cannot start a demo.");
+      throw r.error("You do not have permissions to start the demo. You can set up your own instance at demo.ubq.fi");
     }
     r.info("Processing /demo command");
     await openIssue(e);
-    await setLabels(e);
   } else if (A.includes("ubiquity-os-command-start-stop") && A.includes(o)) {
     r.info("Processing ubiquity-os-command-start-stop post comment");
     const t = await createPullRequest(e);
@@ -31471,7 +31463,7 @@ async function handleLabel(e) {
       owner: i,
       repo: A,
       issue_number: n,
-      body: "/ask Can you help me solving this task by showing the code I should change?",
+      body: "/ask can you help me solving this task by showing the code I should change?",
     });
   } else {
     s.info("Ignoring label change", { label: a, assignee: t.issue.assignee });
