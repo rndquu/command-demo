@@ -1,7 +1,7 @@
 import { customOctokit } from "@ubiquity-os/plugin-sdk/octokit";
-import { handleComment, handleLabel } from "./handlers/run-demo";
+import { handleComment } from "./handlers/run-demo";
 import { Context } from "./types";
-import { isCommentEvent, isLabelEvent } from "./types/typeguards";
+import { isCommentEvent } from "./types/typeguards";
 
 export async function runPlugin(context: Context) {
   const { logger, eventName } = context;
@@ -13,8 +13,6 @@ export async function runPlugin(context: Context) {
   context.userName = user.login;
   if (isCommentEvent(context)) {
     return await handleComment(context);
-  } else if (isLabelEvent(context)) {
-    return await handleLabel(context);
   }
 
   logger.error(`Unsupported event: ${eventName}`);
