@@ -89,11 +89,12 @@ async function createPullRequest({ payload, logger, userOctokit, userName }: Con
 }
 
 export async function handleComment(context: Context<"issue_comment.created">) {
-  const { payload, logger, octokit, userName } = context;
+  const { payload, logger, octokit, userName, userOctokit } = context;
 
   const body = payload.comment.body;
   const repo = payload.repository.name;
   const owner = payload.repository.owner.login;
+  const issueNumber = payload.issue.number;
 
   if (body.trim().startsWith("/demo")) {
     if (!(await isUserAdmin(context))) {
@@ -101,27 +102,8 @@ export async function handleComment(context: Context<"issue_comment.created">) {
     }
     logger.info("Processing /demo command");
     await openIssue(context);
-  } else if (body.includes("ubiquity-os-command-start-stop") && body.includes(userName)) {
-    logger.info("Processing ubiquity-os-command-start-stop post comment");
-    const pr = await createPullRequest(context);
-    await octokit.rest.pulls.merge({
-      owner,
-      repo,
-      pull_number: pr.data.number,
-    });
-  }
-}
 
-export async function handleLabel(context: Context<"issues.labeled">) {
-  const { payload, userOctokit, logger, userName } = context;
-
-  const repo = payload.repository.name;
-  const issueNumber = payload.issue.number;
-  const owner = payload.repository.owner.login;
-  const label = payload.label;
-
-  if (label?.name.startsWith("Price") && payload.issue.assignee?.login === userName) {
-    logger.info("Handle pricing label set", { label });
+    // Create initial comments
     await userOctokit.rest.issues.createComment({
       owner,
       repo,
@@ -134,7 +116,13 @@ export async function handleLabel(context: Context<"issues.labeled">) {
       issue_number: issueNumber,
       body: "/ask can you help me solving this task by showing the code I should change?",
     });
-  } else {
-    logger.info("Ignoring label change", { label, assignee: payload.issue.assignee });
+  } else if (body.includes("ubiquity-os-command-start-stop") && body.includes(userName)) {
+    logger.info("Processing ubiquity-os-command-start-stop post comment");
+    const pr = await createPullRequest(context);
+    await octokit.rest.pulls.merge({
+      owner,
+      repo,
+      pull_number: pr.data.number,
+    });
   }
 }
