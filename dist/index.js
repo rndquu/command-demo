@@ -31434,46 +31434,32 @@ async function createPullRequest({ payload: e, logger: t, userOctokit: r, userNa
   return await r.rest.pulls.create({ owner: n, repo: o, head: `${s}:${u}`, base: a, body: `Resolves #${A}`, title: u });
 }
 async function handleComment(e) {
-  const { payload: t, logger: r, octokit: s, userName: o } = e;
-  const A = t.comment.body;
-  const n = t.repository.name;
-  const i = t.repository.owner.login;
-  if (A.trim().startsWith("/demo")) {
+  const { payload: t, logger: r, octokit: s, userName: o, userOctokit: A } = e;
+  const n = t.comment.body;
+  const i = t.repository.name;
+  const a = t.repository.owner.login;
+  const c = t.issue.number;
+  if (n.trim().startsWith("/demo")) {
     if (!(await isUserAdmin(e))) {
       throw r.error("You do not have permissions to start the demo. You can set up your own instance at demo.ubq.fi");
     }
     r.info("Processing /demo command");
     await openIssue(e);
-  } else if (A.includes("ubiquity-os-command-start-stop") && A.includes(o)) {
-    r.info("Processing ubiquity-os-command-start-stop post comment");
-    const t = await createPullRequest(e);
-    await s.rest.pulls.merge({ owner: i, repo: n, pull_number: t.data.number });
-  }
-}
-async function handleLabel(e) {
-  const { payload: t, userOctokit: r, logger: s, userName: o } = e;
-  const A = t.repository.name;
-  const n = t.issue.number;
-  const i = t.repository.owner.login;
-  const a = t.label;
-  if (a?.name.startsWith("Price") && t.issue.assignee?.login === o) {
-    s.info("Handle pricing label set", { label: a });
-    await r.rest.issues.createComment({ owner: i, repo: A, issue_number: n, body: "/start" });
-    await r.rest.issues.createComment({
-      owner: i,
-      repo: A,
-      issue_number: n,
+    await A.rest.issues.createComment({ owner: a, repo: i, issue_number: c, body: "/start" });
+    await A.rest.issues.createComment({
+      owner: a,
+      repo: i,
+      issue_number: c,
       body: "/ask can you help me solving this task by showing the code I should change?",
     });
-  } else {
-    s.info("Ignoring label change", { label: a, assignee: t.issue.assignee });
+  } else if (n.includes("ubiquity-os-command-start-stop") && n.includes(o)) {
+    r.info("Processing ubiquity-os-command-start-stop post comment");
+    const t = await createPullRequest(e);
+    await s.rest.pulls.merge({ owner: a, repo: i, pull_number: t.data.number });
   }
 }
 function isCommentEvent(e) {
   return e.eventName === "issue_comment.created";
-}
-function isLabelEvent(e) {
-  return e.eventName === "issues.labeled";
 }
 async function runPlugin(e) {
   const { logger: t, eventName: r } = e;
@@ -31482,8 +31468,6 @@ async function runPlugin(e) {
   e.userName = s.login;
   if (isCommentEvent(e)) {
     return await handleComment(e);
-  } else if (isLabelEvent(e)) {
-    return await handleLabel(e);
   }
   t.error(`Unsupported event: ${r}`);
 }
